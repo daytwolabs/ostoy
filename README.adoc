@@ -1,0 +1,19 @@
+= OSToy: toy app to test OpenShift
+
+== Project
+Create a proyect `ostoy-XX`, where XX is your user number.
+
+== Deployment order:
+Create objects in th following order:
+
+----
+- ostoy-config.yaml
+- ostoy-secret.yaml
+- ostoy-secret-env.yaml
+- ostoy-pvc.yaml
+- ostoy-deployment.yaml
+- ostoy-microservice-deployment.yaml
+- ostoy-service.yaml
+- ostoy-microservice-service.yaml
+- ostoy-route.yaml
+----

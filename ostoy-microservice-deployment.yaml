@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ostoy-microservice
+  namespace: ostoy
+  labels:
+    app: ostoy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      deployment: ostoy-microservice
+  template:
+    metadata:
+      labels:
+        deployment: ostoy-microservice
+    spec:
+      containers:
+      - name: ostoy-microservice
+        image: quay.io/daytwo/ostoy-microservice:v1.5.0
+        ports:
+        - containerPort: 8080
+          protocol: TCP
+        resources:
+          requests:
+            memory: 50Mi
+            cpu: 10m
+          limits:
+            memory: 80Mi
+            cpu: 40m

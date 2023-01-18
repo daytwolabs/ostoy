@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: ostoy-microservice
+  namespace: ostoy
+  labels:
+    app: ostoy
+spec:
+  type: ClusterIP
+  selector:
+    deployment: ostoy-microservice
+  ports:
+  - name: 8080-tcp
+    protocol: TCP
+    port: 8080
+    targetPort: 8080

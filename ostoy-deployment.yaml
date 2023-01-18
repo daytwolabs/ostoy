@@ -1,0 +1,68 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ostoy
+  namespace: ostoy
+  labels:
+    app: ostoy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      deployment: ostoy
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        deployment: ostoy
+    spec:
+      containers:
+      - name: ostoy
+        image: quay.io/daytwo/ostoy:v1.5.0
+        ports:
+        - containerPort: 8080
+          protocol: TCP
+        resources:
+          requests:
+            memory: 60Mi
+            cpu: 20m
+          limits:
+            memory: 80Mi
+            cpu: 100m
+        volumeMounts:
+        - name: volume-secret
+          mountPath: /var/secret
+        - name: volume-config
+          mountPath: /var/config
+        - name: volume-pvc
+          mountPath: /var/demo_files
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+            scheme: HTTP
+          timeoutSeconds: 1
+          periodSeconds: 10
+          successThreshold: 1
+          failureThreshold: 3
+        env:
+        - name: MICROSERVICE_NAME
+          value: OSTOY_MICROSERVICE
+        - name: ENV_TOY_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: ostoy-secret-env
+              key: ENV_TOY_SECRET
+      volumes:
+      - name: volume-secret
+        secret:
+          secretName: ostoy-secret
+          defaultMode: 420
+      - name: volume-config
+        configMap:
+          name: ostoy-config
+          defaultMode: 420
+      - name: volume-pvc
+        persistentVolumeClaim:
+          claimName: ostoy-pvc

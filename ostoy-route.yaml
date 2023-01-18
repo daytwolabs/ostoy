@@ -1,0 +1,17 @@
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: ostoy
+  namespace: ostoy
+  labels:
+    app: ostoy
+spec:
+  to:
+    kind: Service
+    name: ostoy
+    weight: 100
+  port:
+    targetPort: 8080-tcp
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Redirect
