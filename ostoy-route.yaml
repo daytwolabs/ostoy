@@ -2,7 +2,6 @@ apiVersion: route.openshift.io/v1
 kind: Route
 metadata:
   name: ostoy
-  namespace: ostoy
   labels:
     app: ostoy
 spec:
