@@ -1,0 +1,184 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ostoy-config
+data:
+  config.json: '{ "default": "123" }'
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: ostoy-secret
+type: Opaque
+data:
+  secret.txt: >-
+    VVNFUk5BTUU9bXlfdXNlcgpQQVNTV09SRD1AT3RCbCVYQXAhIzYzMlk1RndDQE1UUWsKU01UUD1sb2NhbGhvc3QKU01UUF9QT1JUPTI1
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: ostoy-secret-env
+type: Opaque
+data:
+  ENV_TOY_SECRET: VGhpcyBpcyBhIHRlc3Q=
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ostoy-pvc
+  finalizers:
+  - kubernetes.io/pvc-protection
+spec:
+  accessModes:
+  - ReadWriteOnce
+  volumeMode: Filesystem
+  resources:
+    requests:
+      storage: 1G
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ostoy
+  labels:
+    app: ostoy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      deployment: ostoy
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        deployment: ostoy
+    spec:
+      containers:
+      - name: ostoy
+        image: quay.io/daytwo/ostoy:v1.5.0
+        ports:
+        - containerPort: 8080
+          protocol: TCP
+        resources:
+          requests:
+            memory: 60Mi
+            cpu: 20m
+          limits:
+            memory: 80Mi
+            cpu: 100m
+        volumeMounts:
+        - name: volume-secret
+          mountPath: /var/secret
+        - name: volume-config
+          mountPath: /var/config
+        - name: volume-pvc
+          mountPath: /var/demo_files
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+            scheme: HTTP
+          timeoutSeconds: 1
+          periodSeconds: 10
+          successThreshold: 1
+          failureThreshold: 3
+        env:
+        - name: MICROSERVICE_NAME
+          value: OSTOY_MICROSERVICE
+        - name: ENV_TOY_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: ostoy-secret-env
+              key: ENV_TOY_SECRET
+      volumes:
+      - name: volume-secret
+        secret:
+          secretName: ostoy-secret
+          defaultMode: 420
+      - name: volume-config
+        configMap:
+          name: ostoy-config
+          defaultMode: 420
+      - name: volume-pvc
+        persistentVolumeClaim:
+          claimName: ostoy-pvc
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ostoy-microservice
+  labels:
+    app: ostoy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      deployment: ostoy-microservice
+  template:
+    metadata:
+      labels:
+        deployment: ostoy-microservice
+    spec:
+      containers:
+      - name: ostoy-microservice
+        image: quay.io/daytwo/ostoy-microservice:v1.5.0
+        ports:
+        - containerPort: 8080
+          protocol: TCP
+        resources:
+          requests:
+            memory: 50Mi
+            cpu: 10m
+          limits:
+            memory: 80Mi
+            cpu: 40m
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ostoy
+  labels:
+    app: ostoy
+spec:
+  type: ClusterIP
+  selector:
+    deployment: ostoy
+  ports:
+  - name: 8080-tcp
+    protocol: TCP
+    port: 8080
+    targetPort: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ostoy-microservice
+  labels:
+    app: ostoy
+spec:
+  type: ClusterIP
+  selector:
+    deployment: ostoy-microservice
+  ports:
+  - name: 8080-tcp
+    protocol: TCP
+    port: 8080
+    targetPort: 8080
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: ostoy
+  labels:
+    app: ostoy
+spec:
+  to:
+    kind: Service
+    name: ostoy
+    weight: 100
+  port:
+    targetPort: 8080-tcp
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Redirect
