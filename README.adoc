@@ -17,3 +17,10 @@ Create objects in th following order:
 - ostoy-microservice-service.yaml
 - ostoy-route.yaml
 ----
+
+Or:
+
+----
+oc new-project ostoy
+oc apply -f https://raw.githubusercontent.com/daytwolabs/ostoy/main/ostoy.yaml
+----
